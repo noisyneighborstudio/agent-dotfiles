@@ -1,0 +1,22 @@
+[core]
+	editor = nano
+	autocrlf = input
+	excludesfile = ~/.config/agent-worker/gitignore
+[init]
+	defaultBranch = main
+[fetch]
+	prune = true
+[pull]
+	rebase = false
+[push]
+	default = current
+	autoSetupRemote = true
+[diff]
+	colorMoved = zebra
+[color]
+	ui = auto
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true

@@ -1,0 +1,20 @@
+#!/bin/bash
+set -euo pipefail
+export GIT_CONFIG_GLOBAL="$HOME/.config/agent-worker/bot.gitconfig"
+export GIT_AUTHOR_NAME=dougbot-agent
+export GIT_COMMITTER_NAME=dougbot-agent
+export GIT_AUTHOR_EMAIL=269356667+dougbot-agent@users.noreply.github.com
+export GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
+[ "$(git config --get user.name)" = dougbot-agent ] || {
+  echo 'Effective Git author is not dougbot-agent. Fix the repository identity.' >&2; exit 1;
+}
+case "${1:-}" in
+  status|log|diff|show|rev-parse|ls-files|help|--version) exec git "$@" ;;
+  config)
+    case "${2:-}" in --get|--get-all|--get-regexp|--list) exec git "$@" ;; esac ;;
+esac
+gh bot >/dev/null
+[ "$(gh api user --jq .login)" = dougbot-agent ] || {
+  echo 'GitHub bot credentials unavailable. Sign in as dougbot-agent.' >&2; exit 1;
+}
+exec git "$@"
