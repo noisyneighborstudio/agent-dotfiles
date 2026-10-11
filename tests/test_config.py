@@ -79,5 +79,14 @@ class ConfigurationTests(unittest.TestCase):
         self.assertIn("Effective Git author", denied.stderr)
 
 
+    def test_doctor_reports_an_installed_but_broken_cli(self):
+        binary = self.home / ".local/bin/codex"
+        binary.write_text('#!/bin/sh\necho "cannot load runtime" >&2\nexit 1\n')
+        binary.chmod(0o755)
+        result = self.run_command("/bin/bash", str(ROOT / "scripts/check.sh"))
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("BROKEN  codex", result.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()

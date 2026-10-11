@@ -18,7 +18,7 @@ If Command Line Tools are missing, complete the install dialog and rerun the las
 
 The default installs Homebrew, Git and Git LFS, GitHub CLI, Node 24 LTS, Python 3.12 through uv, Bun, tmux, shell utilities, Chrome, Tailscale, Claude, Codex, Grok, and N2 Agents. N2 uses the continuous feed to match the current main Mac. The app must pass signature verification and match its verified signing team. Use `--n2-stable` on a fresh install for stable instead.
 
-Rerunning skips existing tools and retains an installed N2 app. Changed configuration files are backed up under `~/.config/agent-worker/backups`. Existing agent binaries are not upgraded automatically.
+Rerunning skips existing tools and retains an installed N2 app. Changed configuration files are backed up under `~/.config/agent-worker/backups`. Existing agent binaries are not upgraded automatically. Setup logs are saved under `~/Library/Logs/agent-worker`.
 
 Add tools only when your jobs need them:
 
@@ -32,6 +32,8 @@ bash ~/agent-dotfiles/setup.sh --apple
 # Cursor agent, OpenCode, and Muse.
 bash ~/agent-dotfiles/setup.sh --extras
 ```
+
+For an unattended SSH run, administrator steps are deferred if sudo cannot authenticate. Run the printed `scripts/finish-host.sh` command in the mini's own Terminal to enter the password. The helper also unlocks the login keychain when Cursor cannot start. `agent-doctor` reports these steps as pending and checks that installed agent binaries actually start.
 
 Combine flags as needed. `--configure-host` disables system sleep and enables restart after power failure. It does not change FileVault, automatic login, or remote-access permissions. `--link-only` installs configuration without packages or services. `--check` reports commands and bot credentials.
 

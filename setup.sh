@@ -33,6 +33,15 @@ if [ "$MODE" = check ]; then exec /bin/bash "$ROOT/scripts/check.sh"; fi
 mkdir -p "$STATE/backups" "$HOME/.local/bin" "$HOME/Developer" "$HOME/dispatch-inbox" "$HOME/Library/Logs/agent-worker"
 BACKUP="$STATE/backups/$(date +%Y%m%d-%H%M%S)-$$"
 mkdir -p "$BACKUP"
+LOG="$HOME/Library/Logs/agent-worker/setup-$(date +%Y%m%d-%H%M%S)-$$.log"
+exec > >(tee -a "$LOG") 2>&1
+report_exit() {
+  local result=$?
+  if [ "$result" -ne 0 ]; then
+    printf 'Setup stopped with exit %s. Log: %s\n' "$result" "$LOG"
+  fi
+}
+trap report_exit EXIT
 backup() {
   if [ -e "$1" ] || [ -L "$1" ]; then cp -pP "$1" "$BACKUP/$(basename "$1")"; fi
 }
@@ -137,8 +146,8 @@ if ! command -v claude >/dev/null; then
   rm "$installer"
 fi
 command -v codex >/dev/null || npm install -g @openai/codex
-command -v grok >/dev/null || npm install -g @xai-official/grok
-command -v bun >/dev/null || npm install -g bun
+command -v grok >/dev/null || npm install -g --allow-scripts=@xai-official/grok @xai-official/grok
+command -v bun >/dev/null || npm install -g --allow-scripts=bun bun
 uv python install 3.12
 say "Installing verified N2 Agents from the $N2_CHANNEL feed."
 python3 "$ROOT/scripts/install-n2.py" "$N2_CHANNEL"
@@ -164,21 +173,28 @@ if [ "$CONTAINERS" = 1 ]; then
   mkdir -p "$HOME/.docker/cli-plugins"
   link_file /opt/homebrew/opt/docker-compose/bin/docker-compose "$HOME/.docker/cli-plugins/docker-compose"
   colima status >/dev/null 2>&1 || colima start --cpu 4 --memory 6 --disk 60
-  brew services start colima
+  if ! launchctl print "gui/$(id -u)/sh.brew.colima" >/dev/null 2>&1; then
+    brew services start colima
+  else
+    say 'Colima service is already loaded.'
+  fi
 fi
 if [ "$APPLE" = 1 ]; then
   brew install mas cocoapods watchman
-  if [ ! -d /Applications/Xcode.app ]; then
-    mas install 497799835 || die 'Sign into the Mac App Store, then rerun with --apple.'
+fi
+host_options=()
+[ "$APPLE" != 1 ] || host_options+=(--apple)
+[ "$HOST" != 1 ] || host_options+=(--configure-host)
+if [ "${#host_options[@]}" -gt 0 ]; then
+  if sudo -n true 2>/dev/null || [ -t 0 ]; then
+    /bin/bash "$ROOT/scripts/finish-host.sh" "${host_options[@]}"
+  else
+    printf '%s\n' "${host_options[*]}" > "$STATE/host-pending"
+    say 'Administrator work is pending. Run this in the mini Terminal:'
+    printf 'bash "%s/scripts/finish-host.sh" %s\n' "$ROOT" "${host_options[*]}"
   fi
-  sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
-  sudo xcodebuild -license accept
-  sudo xcodebuild -runFirstLaunch
 fi
-if [ "$HOST" = 1 ]; then
-  sudo pmset -a sleep 0
-  sudo pmset -a autorestart 1
-fi
+
 if ! gh alias list | grep -q '^bot:'; then
   gh alias set bot 'auth switch --hostname github.com --user dougbot-agent'
 fi

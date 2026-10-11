@@ -7,6 +7,18 @@ for binary in git gh node npm uv tmux rg jq claude codex grok bun agents; do
     printf 'OK      %s\n' "$binary"
   else printf 'MISSING %s\n' "$binary"; missing=1; fi
 done
+for binary in claude codex grok bun cursor-agent opencode muse; do
+  if command -v "$binary" >/dev/null; then
+    if ! "$binary" --version >/dev/null 2>&1; then
+      printf 'BROKEN  %s: executable failed to start\n' "$binary"
+      missing=1
+    fi
+  fi
+done
+if [ -f "$HOME/.config/agent-worker/host-pending" ]; then
+  echo 'PENDING administrator setup; run the finish-host helper in the mini Terminal'
+  missing=1
+fi
 if [ "$(git dougbot config --get user.name 2>/dev/null)" = dougbot-agent ]; then
   echo 'OK      Git bot author'
 else echo 'MISSING Git bot author'; missing=1; fi
