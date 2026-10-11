@@ -8,6 +8,7 @@ CONTAINERS=0
 APPLE=0
 EXTRAS=0
 HOST=0
+FLEET=0
 N2_CHANNEL=continuous
 for arg in "$@"; do
   case "$arg" in
@@ -16,17 +17,21 @@ for arg in "$@"; do
     --containers) CONTAINERS=1 ;;
     --apple) APPLE=1 ;;
     --extras) EXTRAS=1 ;;
+    --fleet-dev) FLEET=1; EXTRAS=1; APPLE=1; CONTAINERS=1; HOST=1 ;;
     --configure-host) HOST=1 ;;
     --n2-stable) N2_CHANNEL=stable ;;
     --help|-h)
-      echo 'Usage: bash setup.sh [--link-only|--check] [--containers] [--apple] [--extras] [--configure-host] [--n2-stable]'
+      echo 'Usage: bash setup.sh [--link-only|--check] [--containers] [--apple] [--extras] [--configure-host] [--n2-stable] [--fleet-dev]'
       exit 0 ;;
     *) echo "Unknown option: $arg" >&2; exit 2 ;;
   esac
 done
 say() { printf '\n%s\n' "$*"; }
 die() { printf '%s\n' "$*" >&2; exit 1; }
-if [ "$MODE" = check ]; then exec /bin/bash "$ROOT/scripts/check.sh"; fi
+if [ "$MODE" = check ]; then
+  if [ "$FLEET" = 1 ]; then exec /bin/bash "$ROOT/scripts/check.sh" --full; fi
+  exec /bin/bash "$ROOT/scripts/check.sh"
+fi
 [ "$(uname -s)" = Darwin ] || die 'Run on macOS.'
 [ "$(uname -m)" = arm64 ] || die 'Use a native Apple silicon terminal, outside Rosetta.'
 [ "$(id -u)" != 0 ] || die 'Run as the worker account. Do not sudo the entire script.'
@@ -183,8 +188,15 @@ if [ "$APPLE" = 1 ]; then
   brew install mas cocoapods watchman
 fi
 host_options=()
-[ "$APPLE" != 1 ] || host_options+=(--apple)
-[ "$HOST" != 1 ] || host_options+=(--configure-host)
+if [ "$APPLE" = 1 ]; then
+  if [ ! -d /Applications/Xcode.app ] || ! xcodebuild -checkFirstLaunchStatus >/dev/null 2>&1; then
+    host_options+=(--apple)
+  fi
+fi
+if [ "$HOST" = 1 ]; then
+  host_ready=$(pmset -g custom | awk '$1=="sleep" && $2==0 {s=1} $1=="autorestart" && $2==1 {r=1} END {print (s && r) ? 1 : 0}')
+  [ "$host_ready" = 1 ] || host_options+=(--configure-host)
+fi
 if [ "${#host_options[@]}" -gt 0 ]; then
   if sudo -n true 2>/dev/null || [ -t 0 ]; then
     /bin/bash "$ROOT/scripts/finish-host.sh" "${host_options[@]}"
@@ -197,6 +209,9 @@ fi
 
 if ! gh alias list | grep -q '^bot:'; then
   gh alias set bot 'auth switch --hostname github.com --user dougbot-agent'
+fi
+if [ "$FLEET" = 1 ]; then
+  /bin/bash "$ROOT/scripts/setup-fleet-dev.sh"
 fi
 say 'Installed. Complete these account-specific steps:'
 printf '%s\n' \

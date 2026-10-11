@@ -121,3 +121,32 @@ Run the configuration tests on macOS. They use a temporary home, simulate GitHub
 python3 tests/test_config.py
 shellcheck -x -e SC1091 bootstrap.sh setup.sh scripts/git-dougbot scripts/check.sh shell/env.sh
 ```
+
+## Install the full development profile
+
+For a complete fleet-development worker, add `--fleet-dev`:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/noisyneighborstudio/agent-dotfiles/main/bootstrap.sh | bash -s -- --fleet-dev
+```
+
+This includes the existing core, extra agents, containers, Apple tools, T3 Code Nightly and its native background service, ChatGPT, Claude, Cursor, VS Code, Ghostty, Expo Orbit, pnpm, EAS, Wrangler, Playwright with Chromium, CMake, Ninja, Rust, Go, Java 17, media/document tools, and Android SDK/emulator support. It also installs an iOS simulator runtime when Xcode is present.
+
+The private login environment is loaded before T3 starts so GUI/background jobs can use the same approved accounts as SSH. No credentials enter this repository. New machines still need provider and cloud sign-ins; copying credentials is a separate explicit authorization step.
+
+Verify the complete profile, rather than only agent executables:
+
+```bash
+agent-doctor --full
+python3 ~/agent-dotfiles/scripts/verify-builds.py
+```
+
+After installing this profile, plain `agent-doctor` automatically runs the full check. The full check verifies signed app bundles, command availability, T3 service health, mobile SDKs, container runtime, cloud authentication, and bot identity. The build check compiles and runs C, Swift, Rust, Go, and Java, then compiles, installs, and launches a test iOS app on a booted simulator. The latest results are saved privately under `~/.config/agent-worker`.
+
+T3's service binds to loopback. For access from your main Mac, forward its port through the existing SSH connection:
+
+```bash
+ssh -L 3773:127.0.0.1:3773 agent-sh-m5
+```
+
+Use T3's normal one-time pairing flow to authorize the receiving browser or app. The Nightly desktop app and CLI follow the same channel. Full GUI sign-ins, release signing, and project-specific secrets remain separate from installing development tools.

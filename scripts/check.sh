@@ -1,5 +1,9 @@
 #!/bin/bash
 set -uo pipefail
+if [ "${1:-}" = --full ] || [ -f "$HOME/.config/agent-worker/fleet-development" ]; then
+  [ ! -f "$HOME/.config/agent-worker/env.sh" ] || . "$HOME/.config/agent-worker/env.sh"
+  exec python3 "$(cd "$(dirname "$0")" && pwd)/verify-fleet.py"
+fi
 [ ! -f "$HOME/.config/agent-worker/env.sh" ] || . "$HOME/.config/agent-worker/env.sh"
 missing=0
 for binary in git gh node npm uv tmux rg jq claude codex grok bun agents; do

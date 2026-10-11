@@ -88,5 +88,11 @@ class ConfigurationTests(unittest.TestCase):
         self.assertIn("BROKEN  codex", result.stdout)
 
 
+    def test_environment_is_stable_when_sourced_twice(self):
+        command = '. "$HOME/.config/agent-worker/env.sh"; first="$PATH"; . "$HOME/.config/agent-worker/env.sh"; test "$first" = "$PATH"'
+        result = self.run_command("/bin/bash", "-c", command)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()
