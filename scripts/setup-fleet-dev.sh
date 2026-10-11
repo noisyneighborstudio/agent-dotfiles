@@ -18,6 +18,8 @@ while IFS= read -r line; do
 done < "$ROOT/Brewfile.fleet"
 brew bundle --file="$filtered" --no-upgrade
 rm "$filtered"
+# Pick up Java and tool paths installed by this bundle on a fresh machine.
+. "$STATE/env.sh"
 uv python install --default 3.12
 npm install -g --allow-scripts=@expo/ngrok,esbuild,workerd,protobufjs,dtrace-provider eas-cli wrangler @playwright/test @playwright/cli
 playwright install chromium
