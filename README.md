@@ -113,12 +113,17 @@ After a reboot, verify SSH, Tailscale, N2 service status, and one provider job. 
 - [Grok CLI](https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/npm/grok/README.md)
 - [N2 Agents](https://github.com/noisyneighborstudio/n2-agents)
 
+## CI fleet
+
+[`fleet/`](fleet/README.md) spreads self-hosted GitHub runner load across the Macs on the tailnet.
+
 ## Verify changes
 
 Run the configuration tests on macOS. They use a temporary home, simulate GitHub identity responses, and exercise real Git commits. They do not install packages or modify the current account.
 
 ```bash
 python3 tests/test_config.py
+uv run --script tests/test_fleet.py
 shellcheck -x -e SC1091 bootstrap.sh setup.sh scripts/git-dougbot scripts/check.sh shell/env.sh
 ```
 
