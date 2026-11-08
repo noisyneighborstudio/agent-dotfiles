@@ -1,0 +1,43 @@
+# CI hosts on the tailnet. Edit this file, then `fleet install <host>` to push it.
+#
+# state:
+#   active     the gate opens and closes the host's runners by load
+#   drained    the gate keeps every runner closed (no new jobs; running jobs finish)
+#   hands-off  no fleet command touches the host, not even status
+#   excluded   not a CI host; status only
+#
+# slots is the runner count the host should carry; status flags a mismatch.
+
+[gate]
+close_load = 1.5      # 1-min load per core above this closes the host
+open_load = 0.9       # 5-min load per core below this reopens it
+min_disk_gb = 30      # less free disk than this closes the host
+min_mem_free_pct = 15 # less free memory than this closes the host
+label = "fleet-open"  # jobs must ask for this label to be gated
+
+[hosts.agent-sh-m5]
+ssh = "sethwebster@agent-sh-m5"
+hostname = "agent-sh-m5"
+state = "active"
+slots = 3
+note = "M5 Pro, 18 cores, 64 GB; also the agent host"
+
+[hosts.seths-mac-mini]
+ssh = "sethwebster@seths-mac-mini"
+hostname = "seth-agent"
+state = "active"
+slots = 3
+note = "M4 Pro, 14 cores, 48 GB; also runs the Lumen device lab"
+
+[hosts.seth-webster-m4]
+ssh = "sethwebster@seth-webster-m4"
+state = "hands-off"
+slots = 4
+note = "M4 Max, 16 cores, 128 GB; bakeoff in progress"
+
+[hosts.macbook-m5-pro-max-sdw-1]
+ssh = "sethwebster@macbook-m5-pro-max-sdw-1"
+hostname = "macbook-m5-pro-max-sdw"
+state = "excluded"
+slots = 0
+note = "M5 Max laptop; connectivity comes and goes"
